@@ -82,8 +82,8 @@ jobs:
 #          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
 #          title: "[Auto] New FXServer recommended version: ${{ github.event.inputs.recommended }}"
 #          body: ""
-#          assignees: routmoute
-#          reviewers: routmoute
+#          assignees: legrizzly
+#          reviewers: legrizzly
   new-optional:
     name: Create PR for optional
     runs-on: ubuntu-latest
@@ -113,5 +113,5 @@ jobs:
 #          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
 #          title: "[Auto] New FXServer optional version: ${{ github.event.inputs.optional }}"
 #          body: ""
-#          assignees: routmoute
-#          reviewers: routmoute
+#          assignees: legrizzly
+#          reviewers: legrizzly
