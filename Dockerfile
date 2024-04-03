@@ -8,8 +8,6 @@ RUN apk update --no-cache && apk upgrade --no-cache
 RUN addgroup -g 1000 -S cfx && adduser -u 1000 -S cfx -G cfx
 RUN mkdir /txData && chown cfx:cfx /txData
 
-COPY monitor /opt/cfx-server/citizen/system_resources/monitor
-
 USER cfx
 WORKDIR /opt/cfx-server
 EXPOSE 30120/tcp 30120/udp 40120/tcp
