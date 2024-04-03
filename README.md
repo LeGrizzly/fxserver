@@ -6,9 +6,9 @@ FXServer for FiveM or RedM server
 
 it's recommended to use `recommended` tag to use recommended FXServer version.
 
-- [`recommended`](https://github.com/routmoute/fxserver/tree/recommended)
-- [`optional`](https://github.com/routmoute/fxserver/tree/optional)
-- [`latest`](https://github.com/routmoute/fxserver/tree/main)
+- [`recommended`](https://github.com/legrizzly/fxserver/tree/recommended)
+- [`optional`](https://github.com/legrizzly/fxserver/tree/optional)
+- [`latest`](https://github.com/legrizzly/fxserver/tree/main)
 
 ## Examples
 
@@ -18,7 +18,7 @@ it's recommended to use `recommended` tag to use recommended FXServer version.
 docker run -it -p 30120:30120/tcp -p 30120:30120/udp \
     -v /yourLocalServerFolder/server.cfg:/opt/cfx-server/server.cfg \
     -v /yourLocalServerFolder/resources:/opt/cfx-server/resources \
-    routmoute/fxserver:recommended +exec server.cfg +set gamename rdr3
+    legrizzly/fxserver:recommended +exec server.cfg +set gamename rdr3
 ```
 
 ### Docker-compose
@@ -28,7 +28,7 @@ version: "3.8"
 
 services:
   redm:
-    image: routmoute/fxserver:recommended
+    image: legrizzly/fxserver:recommended
     tty: true
     stdin_open: true
     volumes:
@@ -43,7 +43,7 @@ services:
 ### Image based
 
 ```dockerfile
-FROM routmoute/fxserver:recommended
+FROM legrizzly/fxserver:recommended
 
 COPY server.cfg server.cfg
 COPY resources resources
