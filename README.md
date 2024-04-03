@@ -1,14 +1,14 @@
 # fxserver
 
-FXServer for FiveM or RedM server
+FXServer for FiveM server
 
 ## Tags
 
 it's recommended to use `recommended` tag to use recommended FXServer version.
 
-- [`recommended`](https://github.com/legrizzly/fxserver/tree/recommended)
-- [`optional`](https://github.com/legrizzly/fxserver/tree/optional)
-- [`latest`](https://github.com/legrizzly/fxserver/tree/main)
+- [`recommended`](https://github.com/xalsie/fxserver/tree/recommended)
+- [`optional`](https://github.com/xalsie/fxserver/tree/optional)
+- [`latest`](https://github.com/xalsie/fxserver/tree/main)
 
 ## Examples
 
@@ -18,7 +18,7 @@ it's recommended to use `recommended` tag to use recommended FXServer version.
 docker run -it -p 30120:30120/tcp -p 30120:30120/udp \
     -v /yourLocalServerFolder/server.cfg:/opt/cfx-server/server.cfg \
     -v /yourLocalServerFolder/resources:/opt/cfx-server/resources \
-    legrizzly/fxserver:recommended +exec server.cfg +set gamename rdr3
+    legrizzly/fxserver:recommended +exec server.cfg +set gamename gta5
 ```
 
 ### Docker-compose
@@ -37,7 +37,7 @@ services:
     ports:
       - "30120:30120/tcp"
       - "30120:30120/udp"
-    command: +exec server.cfg +set gamename rdr3
+    command: +exec server.cfg +set gamename gta5
 ```
 
 ### Image based
@@ -48,5 +48,5 @@ FROM legrizzly/fxserver:recommended
 COPY server.cfg server.cfg
 COPY resources resources
 
-CMD ["+exec", "server.cfg", "+set", "gamename", "rdr3"]
+CMD ["+exec", "server.cfg", "+set", "gamename", "gta5"]
 ```
