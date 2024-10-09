@@ -1,9 +1,10 @@
-FROM alpine AS dwnld
+FROM alpine:3.20.3 AS dwnld
 RUN apk update --no-cache && apk add --no-cache ca-certificates curl
 RUN curl https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/10230-aaab4384aeed5873a2353f391a1218d3950d4066/fx.tar.xz | tar xJ -C /srv/.
 
 FROM scratch
 COPY --from=dwnld /srv/alpine/. /.
+RUN apk del curl ca-certificates
 RUN apk update --no-cache && apk upgrade --no-cache
 RUN addgroup -g 1000 -S cfx && adduser -u 1000 -S cfx -G cfx
 RUN mkdir /txData && chown cfx:cfx /txData
