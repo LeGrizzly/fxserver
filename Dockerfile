@@ -1,6 +1,6 @@
 FROM alpine:3.20.3 AS dwnld
 RUN apk update --no-cache && apk add --no-cache ca-certificates curl
-RUN curl https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/12031-1baa5c805bb6d2947321f1e82fa3aec8836b20b1/fx.tar.xz | tar xJ -C /srv/.
+RUN curl https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/12092-c9700385dfad9008c8b7888a61d3901451c4dc29/fx.tar.xz | tar xJ -C /srv/.
 
 FROM scratch
 COPY --from=dwnld /srv/alpine/. /.
