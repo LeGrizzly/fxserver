@@ -17,6 +17,11 @@ jobs:
       optional_url: ${{ steps.parse-json.outputs.optional_url }}
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ssh-key: "${{ secrets.COMMIT_KEY }}"
+          
       - name: Fetch version data
         id: fetch-data
         run: |
@@ -40,15 +45,10 @@ jobs:
           echo "optional=$optional" >> $GITHUB_OUTPUT
           echo "optional_url=$optional_url" >> $GITHUB_OUTPUT
       
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ssh-key: "${{ secrets.COMMIT_KEY }}"
-      
       - name: Check for changes
         id: check-changes
         run: |
-          latest=$(jq -r '.latest' versions.json)
+          latest="${{ steps.parse-json.outputs.latest }}"
           
           # Check if tag already exists
           if git rev-parse "$latest" >/dev/null 2>&1; then
