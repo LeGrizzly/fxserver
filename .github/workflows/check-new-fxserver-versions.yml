@@ -1,0 +1,130 @@
+name: Check for new FXserver versions
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-versions:
+    name: Check for new versions
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{ steps.parse-json.outputs.latest }}
+      latest_url: ${{ steps.parse-json.outputs.latest_url }}
+      recommended: ${{ steps.parse-json.outputs.recommended }}
+      recommended_url: ${{ steps.parse-json.outputs.recommended_url }}
+      optional: ${{ steps.parse-json.outputs.optional }}
+      optional_url: ${{ steps.parse-json.outputs.optional_url }}
+      has_changes: ${{ steps.check-changes.outputs.has_changes }}
+    steps:
+      - name: Fetch version data
+        id: fetch-data
+        run: |
+          curl -s https://changelogs-live.fivem.net/api/changelog/versions/linux/server > versions.json
+          cat versions.json
+      
+      - name: Parse JSON data
+        id: parse-json
+        run: |
+          latest=$(jq -r '.latest' versions.json)
+          latest_url=$(jq -r '.latest_download' versions.json)
+          recommended=$(jq -r '.recommended' versions.json)
+          recommended_url=$(jq -r '.recommended_download' versions.json)
+          optional=$(jq -r '.optional' versions.json)
+          optional_url=$(jq -r '.optional_download' versions.json)
+          
+          echo "latest=$latest" >> $GITHUB_OUTPUT
+          echo "latest_url=$latest_url" >> $GITHUB_OUTPUT
+          echo "recommended=$recommended" >> $GITHUB_OUTPUT
+          echo "recommended_url=$recommended_url" >> $GITHUB_OUTPUT
+          echo "optional=$optional" >> $GITHUB_OUTPUT
+          echo "optional_url=$optional_url" >> $GITHUB_OUTPUT
+      
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ssh-key: "${{ secrets.COMMIT_KEY }}"
+      
+      - name: Check for changes
+        id: check-changes
+        run: |
+          latest=$(jq -r '.latest' versions.json)
+          
+          # Check if tag already exists
+          if git rev-parse "$latest" >/dev/null 2>&1; then
+            echo "No new versions detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "New version detected: $latest"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  new-tag:
+    name: Update Tag
+    runs-on: ubuntu-latest
+    needs: check-versions
+    if: needs.check-versions.outputs.has_changes == 'true'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ssh-key: "${{ secrets.COMMIT_KEY }}"
+      
+      - name: Update Dockerfile
+        run: perl -i -pe 's,(?<=curl ).*(?= \|),${{ needs.check-versions.outputs.latest_url }},' Dockerfile
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Commit Dockerfile
+        run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.latest }}' -a"
+      
+      - name: Create tag
+        run: git tag ${{ needs.check-versions.outputs.latest }}
+      
+      - name: Push new tag
+        run: |
+          git push
+          git push origin ${{ needs.check-versions.outputs.latest }}
+  
+  new-recommended:
+    name: Create PR for recommended
+    runs-on: ubuntu-latest
+    needs: ["check-versions", "new-tag"]
+    if: needs.check-versions.outputs.has_changes == 'true' && needs.check-versions.outputs.recommended != ''
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "${{ needs.check-versions.outputs.recommended }}"
+          ssh-key: "${{ secrets.COMMIT_KEY }}"
+      
+      - name: Create release branch
+        run: git branch ${{ needs.check-versions.outputs.recommended }}_to_recommended
+      
+      - name: Switch to release branch
+        run: git checkout ${{ needs.check-versions.outputs.recommended }}_to_recommended
+      
+      - name: Push new release branch
+        run: git push --set-upstream origin ${{ needs.check-versions.outputs.recommended }}_to_recommended
+  
+  new-optional:
+    name: Create PR for optional
+    runs-on: ubuntu-latest
+    needs: ["check-versions", "new-tag", "new-recommended"]
+    if: needs.check-versions.outputs.has_changes == 'true' && needs.check-versions.outputs.optional != ''
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "${{ needs.check-versions.outputs.optional }}"
+          ssh-key: "${{ secrets.COMMIT_KEY }}"
+      
+      - name: Create release branch
+        run: git branch ${{ needs.check-versions.outputs.optional }}_to_optional
+      
+      - name: Switch to release branch
+        run: git checkout ${{ needs.check-versions.outputs.optional }}_to_optional
+      
+      - name: Push new release branch
+        run: git push --set-upstream origin ${{ needs.check-versions.outputs.optional }}_to_optional
