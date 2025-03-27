@@ -120,7 +120,7 @@ jobs:
     name: Create PR for recommended
     runs-on: ubuntu-latest
     needs: ["check-versions", "new-latest"]
-    if: needs.check-versions.outputs.has_recommended_changes == 'true' && needs.check-versions.outputs.recommended != ''
+    if: needs.check-versions.outputs.has_recommended_changes == 'true'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -140,7 +140,7 @@ jobs:
     name: Create PR for optional
     runs-on: ubuntu-latest
     needs: ["check-versions", "new-latest", "new-recommended"]
-    if: needs.check-versions.outputs.has_optional_changes == 'true' && needs.check-versions.outputs.optional != ''
+    if: needs.check-versions.outputs.has_optional_changes == 'true'
     steps:
       - uses: actions/checkout@v3
         with:
