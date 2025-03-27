@@ -51,8 +51,7 @@ jobs:
         id: check-changes
         run: |
           latest="${{ steps.parse-json.outputs.latest }}"
-      
-          # Check if tag already exists
+
           if git rev-parse "$latest" >/dev/null 2>&1; then
             echo "No new latest versions detected"
             echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -66,32 +65,20 @@ jobs:
         run: |
           recommended="${{ steps.parse-json.outputs.recommended }}"
 
-          if [ -z "$recommended" ]; then
-            echo "No recommended version available"
-            echo "has_recommended_changes=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if git fetch --tags && git tag -l | grep -q "^$recommended$"; then
+          if git fetch origin recommended && git tag --list --points-at origin/recommended | grep -q "^$recommended$"; then
             echo "Tag for recommended version $recommended already exists"
             echo "has_recommended_changes=false" >> $GITHUB_OUTPUT
           else
             echo "New recommended version detected: $recommended"
             echo "has_recommended_changes=true" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Check for optional changes
         id: check-optional-changes
         run: |
           optional="${{ steps.parse-json.outputs.optional }}"
 
-          if [ -z "$optional" ]; then
-            echo "No optional version available"
-            echo "has_optional_changes=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if git fetch --tags && git tag -l | grep -q "^$optional$"; then
+          if git fetch origin optional && git tag --list --points-at origin/optional | grep -q "^$optional$"; then
             echo "Tag for optional version $optional already exists"
             echo "has_optional_changes=false" >> $GITHUB_OUTPUT
           else
