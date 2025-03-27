@@ -124,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: "origin/recommended"
+          ref: "recommended"
           ssh-key: "${{ secrets.COMMIT_KEY }}"
 
       - name: Update Dockerfile
@@ -154,14 +154,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: "${{ needs.check-versions.outputs.optional }}"
+          ref: "optional"
           ssh-key: "${{ secrets.COMMIT_KEY }}"
-      
-      - name: Create release branch
-        run: git branch ${{ needs.check-versions.outputs.optional }}_to_optional
-      
-      - name: Switch to release branch
-        run: git checkout ${{ needs.check-versions.outputs.optional }}_to_optional
-      
-      - name: Push new release branch
-        run: git push --set-upstream origin ${{ needs.check-versions.outputs.optional }}_to_optional
+
+      - name: Update Dockerfile
+        run: perl -i -pe 's,(?<=curl ).*(?= \|),${{ needs.check-versions.outputs.optional_url }},' Dockerfile
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Commit Dockerfile
+        run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.optional }}' -a"
+
+      - name: Create tag
+        run: git tag ${{ needs.check-versions.outputs.optional }}
+
+      - name: Push new tag  
+        run: |
+          git push
+          git push origin ${{ needs.check-versions.outputs.optional }}
