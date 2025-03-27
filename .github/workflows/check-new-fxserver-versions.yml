@@ -45,22 +45,50 @@ jobs:
           echo "optional=$optional" >> $GITHUB_OUTPUT
           echo "optional_url=$optional_url" >> $GITHUB_OUTPUT
       
-      - name: Check for changes
+      - name: Check for latest changes
         id: check-changes
         run: |
           latest="${{ steps.parse-json.outputs.latest }}"
-          
+      
           # Check if tag already exists
           if git rev-parse "$latest" >/dev/null 2>&1; then
-            echo "No new versions detected"
+            echo "No new latest versions detected"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            echo "New version detected: $latest"
+            echo "New latest version detected: $latest"
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
 
-  new-tag:
-    name: Update Tag
+      - name: Check for recommended changes
+        id: check-recommended-changes
+        run: |
+          recommended="${{ steps.parse-json.outputs.recommended }}"
+      
+          # Check if tag already exists
+          if git rev-parse "$recommended" >/dev/null 2>&1; then
+            echo "No new recommended versions detected"
+            echo "has_recommended_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "New recommended version detected: $recommended"
+            echo "has_recommended_changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for optional changes
+        id: check-optional-changes
+        run: |
+          optional="${{ steps.parse-json.outputs.optional }}"
+      
+          # Check if tag already exists
+          if git rev-parse "$optional" >/dev/null 2>&1; then
+            echo "No new optional versions detected"
+            echo "has_optional_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "New optional version detected: $optional"
+            echo "has_optional_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  new-latest:
+    name: Create PR for latest
     runs-on: ubuntu-latest
     needs: check-versions
     if: needs.check-versions.outputs.has_changes == 'true'
@@ -93,7 +121,7 @@ jobs:
     name: Create PR for recommended
     runs-on: ubuntu-latest
     needs: ["check-versions", "new-tag"]
-    if: needs.check-versions.outputs.has_changes == 'true' && needs.check-versions.outputs.recommended != ''
+    if: needs.check-versions.outputs.has_recommended_changes == 'true' && needs.check-versions.outputs.recommended != ''
     steps:
       - uses: actions/checkout@v3
         with:
@@ -113,7 +141,7 @@ jobs:
     name: Create PR for optional
     runs-on: ubuntu-latest
     needs: ["check-versions", "new-tag", "new-recommended"]
-    if: needs.check-versions.outputs.has_changes == 'true' && needs.check-versions.outputs.optional != ''
+    if: needs.check-versions.outputs.has_optional_changes == 'true' && needs.check-versions.outputs.optional != ''
     steps:
       - uses: actions/checkout@v3
         with:
