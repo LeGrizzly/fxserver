@@ -16,6 +16,8 @@ jobs:
       optional: ${{ steps.parse-json.outputs.optional }}
       optional_url: ${{ steps.parse-json.outputs.optional_url }}
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
+      has_recommended_changes: ${{ steps.check-recommended-changes.outputs.has_recommended_changes }}
+      has_optional_changes: ${{ steps.check-optional-changes.outputs.has_optional_changes }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -63,10 +65,15 @@ jobs:
         id: check-recommended-changes
         run: |
           recommended="${{ steps.parse-json.outputs.recommended }}"
-      
-          # Check if tag already exists
-          if git rev-parse "$recommended" >/dev/null 2>&1; then
-            echo "No new recommended versions detected"
+
+          if [ -z "$recommended" ]; then
+            echo "No recommended version available"
+            echo "has_recommended_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if git fetch --tags && git tag -l | grep -q "^$recommended$"; then
+            echo "Tag for recommended version $recommended already exists"
             echo "has_recommended_changes=false" >> $GITHUB_OUTPUT
           else
             echo "New recommended version detected: $recommended"
@@ -77,10 +84,15 @@ jobs:
         id: check-optional-changes
         run: |
           optional="${{ steps.parse-json.outputs.optional }}"
-      
-          # Check if tag already exists
-          if git rev-parse "$optional" >/dev/null 2>&1; then
-            echo "No new optional versions detected"
+
+          if [ -z "$optional" ]; then
+            echo "No optional version available"
+            echo "has_optional_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if git fetch --tags && git tag -l | grep -q "^$optional$"; then
+            echo "Tag for optional version $optional already exists"
             echo "has_optional_changes=false" >> $GITHUB_OUTPUT
           else
             echo "New optional version detected: $optional"
