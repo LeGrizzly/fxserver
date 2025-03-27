@@ -119,27 +119,37 @@ jobs:
   new-recommended:
     name: Create PR for recommended
     runs-on: ubuntu-latest
-    needs: ["check-versions", "new-latest"]
+    needs: ["check-versions"]
     if: needs.check-versions.outputs.has_recommended_changes == 'true'
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: "${{ needs.check-versions.outputs.recommended }}"
+          ref: "origin/recommended"
           ssh-key: "${{ secrets.COMMIT_KEY }}"
-      
-      - name: Create release branch
-        run: git branch ${{ needs.check-versions.outputs.recommended }}_to_recommended
-      
-      - name: Switch to release branch
-        run: git checkout ${{ needs.check-versions.outputs.recommended }}_to_recommended
-      
-      - name: Push new release branch
-        run: git push --set-upstream origin ${{ needs.check-versions.outputs.recommended }}_to_recommended
-  
+
+      - name: Update Dockerfile
+        run: perl -i -pe 's,(?<=curl ).*(?= \|),${{ needs.check-versions.outputs.recommended_url }},' Dockerfile
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Commit Dockerfile
+        run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.recommended }}' -a"
+
+      - name: Create tag
+        run: git tag ${{ needs.check-versions.outputs.recommended }}
+
+      - name: Push new tag  
+        run: |
+          git push
+          git push origin ${{ needs.check-versions.outputs.recommended }}
+
   new-optional:
     name: Create PR for optional
     runs-on: ubuntu-latest
-    needs: ["check-versions", "new-latest", "new-recommended"]
+    needs: ["check-versions"]
     if: needs.check-versions.outputs.has_optional_changes == 'true'
     steps:
       - uses: actions/checkout@v3
