@@ -13,11 +13,8 @@ jobs:
       latest_url: ${{ steps.parse-json.outputs.latest_url }}
       recommended: ${{ steps.parse-json.outputs.recommended }}
       recommended_url: ${{ steps.parse-json.outputs.recommended_url }}
-      optional: ${{ steps.parse-json.outputs.optional }}
-      optional_url: ${{ steps.parse-json.outputs.optional_url }}
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
       has_recommended_changes: ${{ steps.check-recommended-changes.outputs.has_recommended_changes }}
-      has_optional_changes: ${{ steps.check-optional-changes.outputs.has_optional_changes }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -37,15 +34,11 @@ jobs:
           latest_url=$(jq -r '.latest_download' versions.json)
           recommended=$(jq -r '.recommended' versions.json)
           recommended_url=$(jq -r '.recommended_download' versions.json)
-          optional=$(jq -r '.optional' versions.json)
-          optional_url=$(jq -r '.optional_download' versions.json)
           
           echo "latest=$latest" >> $GITHUB_OUTPUT
           echo "latest_url=$latest_url" >> $GITHUB_OUTPUT
           echo "recommended=$recommended" >> $GITHUB_OUTPUT
           echo "recommended_url=$recommended_url" >> $GITHUB_OUTPUT
-          echo "optional=$optional" >> $GITHUB_OUTPUT
-          echo "optional_url=$optional_url" >> $GITHUB_OUTPUT
       
       - name: Check for latest changes
         id: check-changes
@@ -71,19 +64,6 @@ jobs:
           else
             echo "New recommended version detected: $recommended"
             echo "has_recommended_changes=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check for optional changes
-        id: check-optional-changes
-        run: |
-          optional="${{ steps.parse-json.outputs.optional }}"
-
-          if git fetch origin optional && git tag --list --points-at origin/optional | grep -q "^$optional$"; then
-            echo "Tag for optional version $optional already exists"
-            echo "has_optional_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "New optional version detected: $optional"
-            echo "has_optional_changes=true" >> $GITHUB_OUTPUT
           fi
 
   new-latest:
@@ -146,32 +126,3 @@ jobs:
           git push
           git push origin ${{ needs.check-versions.outputs.recommended }}
 
-  new-optional:
-    name: Create PR for optional
-    runs-on: ubuntu-latest
-    needs: ["check-versions"]
-    if: needs.check-versions.outputs.has_optional_changes == 'true'
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: "optional"
-          ssh-key: "${{ secrets.COMMIT_KEY }}"
-
-      - name: Update Dockerfile
-        run: perl -i -pe 's,(?<=curl ).*(?= \|),${{ needs.check-versions.outputs.optional_url }},' Dockerfile
-
-      - name: Configure Git
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-      - name: Commit Dockerfile
-        run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.optional }}' -a"
-
-      - name: Create tag
-        run: git tag ${{ needs.check-versions.outputs.optional }}
-
-      - name: Push new tag  
-        run: |
-          git push
-          git push origin ${{ needs.check-versions.outputs.optional }}
