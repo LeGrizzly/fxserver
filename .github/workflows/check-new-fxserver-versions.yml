@@ -85,13 +85,27 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
       
+      - name: Check if changes exist
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Commit Dockerfile
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.latest }}' -a"
       
       - name: Create tag
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: git tag ${{ needs.check-versions.outputs.latest }}
       
       - name: Push new tag
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           git push
           git push origin ${{ needs.check-versions.outputs.latest }}
@@ -115,14 +129,27 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+      - name: Check if changes exist
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Commit Dockerfile
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.recommended }}' -a"
 
       - name: Create tag
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: git tag ${{ needs.check-versions.outputs.recommended }}
 
       - name: Push new tag  
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           git push
           git push origin ${{ needs.check-versions.outputs.recommended }}
-
