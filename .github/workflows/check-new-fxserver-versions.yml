@@ -1,7 +1,7 @@
 name: Check for new FXserver versions
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '30 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -20,13 +20,29 @@ jobs:
         with:
           fetch-depth: 0
           ssh-key: "${{ secrets.COMMIT_KEY }}"
-          
-      - name: Fetch version data
+
+      - name: Fetch version data with retry
         id: fetch-data
         run: |
-          curl -s https://changelogs-live.fivem.net/api/changelog/versions/linux/server > versions.json
-          cat versions.json
-      
+          attempts=0
+          max_attempts=3
+          until [ $attempts -ge $max_attempts ]
+          do
+            curl -s https://changelogs-live.fivem.net/api/changelog/versions/linux/server > versions.json
+            if [ -s versions.json ]; then
+              cat versions.json
+              break
+            fi
+            attempts=$((attempts+1))
+            if [ $attempts -lt $max_attempts ]; then
+              echo "versions.json is empty, retrying in 10 minutes..."
+              sleep 600
+            else
+              echo "versions.json is still empty after $max_attempts attempts, stopping pipeline."
+              exit 1
+            fi
+          done
+
       - name: Parse JSON data
         id: parse-json
         run: |
@@ -34,12 +50,12 @@ jobs:
           latest_url=$(jq -r '.latest_download' versions.json)
           recommended=$(jq -r '.recommended' versions.json)
           recommended_url=$(jq -r '.recommended_download' versions.json)
-          
+
           echo "latest=$latest" >> $GITHUB_OUTPUT
           echo "latest_url=$latest_url" >> $GITHUB_OUTPUT
           echo "recommended=$recommended" >> $GITHUB_OUTPUT
           echo "recommended_url=$recommended_url" >> $GITHUB_OUTPUT
-      
+
       - name: Check for latest changes
         id: check-changes
         run: |
@@ -76,15 +92,15 @@ jobs:
         with:
           fetch-depth: 0
           ssh-key: "${{ secrets.COMMIT_KEY }}"
-      
+
       - name: Update Dockerfile
         run: perl -i -pe 's,(?<=curl ).*(?= \|),${{ needs.check-versions.outputs.latest_url }},' Dockerfile
-      
+
       - name: Configure Git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-      
+
       - name: Check if changes exist
         id: check-changes
         run: |
@@ -99,17 +115,17 @@ jobs:
       - name: Commit Dockerfile
         if: steps.check-changes.outputs.has_changes == 'true'
         run: "git commit -m '[Auto] New FXServer version: ${{ needs.check-versions.outputs.latest }}' -a"
-      
+
       - name: Create tag
         if: steps.check-changes.outputs.has_changes == 'true'
         run: git tag ${{ needs.check-versions.outputs.latest }}
-      
+
       - name: Push new tag
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           git push
           git push origin ${{ needs.check-versions.outputs.latest }}
-  
+
   new-recommended:
     name: Create PR for recommended
     runs-on: ubuntu-latest
