@@ -123,6 +123,11 @@ jobs:
       - name: Push new tag
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
+          run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${{ needs.check-versions.outputs.latest }}$"; then
+            echo "Tag ${{ needs.check-versions.outputs.latest }} already exists on remote, skipping push."
+            exit 0
+          fi
           git push
           git push origin ${{ needs.check-versions.outputs.latest }}
 
@@ -164,8 +169,12 @@ jobs:
         if: steps.check-changes.outputs.has_changes == 'true'
         run: git tag ${{ needs.check-versions.outputs.recommended }}
 
-      - name: Push new tag  
+      - name: Push new tag
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${{ needs.check-versions.outputs.recommended }}$"; then
+            echo "Tag ${{ needs.check-versions.outputs.recommended }} already exists on remote, skipping push."
+            exit 0
+          fi
           git push
           git push origin ${{ needs.check-versions.outputs.recommended }}
